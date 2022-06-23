@@ -1,0 +1,544 @@
+{
+	"info": {
+		"_postman_id": "bf488879-35cc-40fe-8ca3-a6836d453c35",
+		"name": "Nordigen Technical Assigment",
+		"description": "## Instructions:\n\nIn order to successfully get the account transactions please execute in the following order\n\n1.  Request CCG\n2.  Initiate Consent\n3.  Authorization Code Grant\n4.  Authorization Grant Token\n5.  Get Accounts\n6.  Account1Transactions\n7.  Account2Transactions\n    \n\nIt is not mandatory to follow order in the step 6th and 7th. The variables are all softcoded, there exist no hardcoded variables.\n\nIn the 3rd step, it is not required to press Sign button, the test code automatically finds the authirzation code and set as a collection variable. So, If it is required to see the authorization code please select \"Visualizer\" Tab in the response area. So In short, just run the \"Authorization Code Grant\" and move forward.\n\n*The API has some bugs due to some latency, so it can result and httperror, saying the client-key or secret-key is invalid. When encountering that error, just resent the request multiple times it will fix the problem.*",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "20726197"
+	},
+	"item": [
+		{
+			"name": "Request CCG",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"\r",
+							"var jsonData = pm.response.json()\r",
+							"pm.collectionVariables.set(\"access_token\", jsonData.access_token);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"grant_type\" : \"client_credentials\",\r\n    \"scope\" : \"AIS\",\r\n    \"client_id\" : \"{{clintkey}}\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://sandbox.handelsbanken.com/openbanking/oauth2/token/1.0",
+					"protocol": "https",
+					"host": [
+						"sandbox",
+						"handelsbanken",
+						"com"
+					],
+					"path": [
+						"openbanking",
+						"oauth2",
+						"token",
+						"1.0"
+					],
+					"query": [
+						{
+							"key": "grant_type",
+							"value": "client_credentials",
+							"disabled": true
+						},
+						{
+							"key": "scope",
+							"value": "AIS",
+							"disabled": true
+						},
+						{
+							"key": "client_id",
+							"value": "6cf1bd51-7e86-476a-ba8c-be918c178a45",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Initiate Consent",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json()\r",
+							"pm.collectionVariables.set(\"consentId\", jsonData.consentId);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {
+					"connection": true,
+					"accept-encoding": true
+				}
+			},
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-IBM-Client-Id",
+						"value": "{{clintkey}}",
+						"type": "text"
+					},
+					{
+						"key": "Country",
+						"value": "GB",
+						"type": "text"
+					},
+					{
+						"key": "TPP-Request-ID",
+						"value": "some-ran",
+						"type": "text"
+					},
+					{
+						"key": "TPP-Transaction-ID",
+						"value": "some-rando",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{access_token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"access\" : \"ALL_ACCOUNTS\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://sandbox.handelsbanken.com/openbanking/psd2/v1/consents",
+					"protocol": "https",
+					"host": [
+						"sandbox",
+						"handelsbanken",
+						"com"
+					],
+					"path": [
+						"openbanking",
+						"psd2",
+						"v1",
+						"consents"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Authorization Code Grant",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let rettext = pm.response.text();\r",
+							"let postext = rettext.indexOf(\"var authorizationCode = \");\r",
+							"initplace = postext + 25;\r",
+							"var code = '';\r",
+							"for(let i = initplace; i < initplace+100; i++)\r",
+							"{\r",
+							"    if(rettext[i] == \"'\")\r",
+							"    {\r",
+							"        break;\r",
+							"    }\r",
+							"    else{\r",
+							"        code= code+rettext[i];\r",
+							"    }\r",
+							"}\r",
+							"pm.collectionVariables.set(\"codes\", code);\r",
+							"template = `\r",
+							"<pre><code>{{response}}</code></pre>\r",
+							"`;\r",
+							"pm.visualizer.set(template,{response: JSON.stringify({\"Code\" : code})});\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {
+					"accept": true
+				},
+				"followRedirects": true
+			},
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://sandbox.handelsbanken.com/openbanking/redirect/oauth2/authorize/1.0?client_id={{clintkey}}&response_type=code&scope=AIS%3A{{consentId}}&redirect_uri=https://www.xy223.com/&state=NL",
+					"protocol": "https",
+					"host": [
+						"sandbox",
+						"handelsbanken",
+						"com"
+					],
+					"path": [
+						"openbanking",
+						"redirect",
+						"oauth2",
+						"authorize",
+						"1.0"
+					],
+					"query": [
+						{
+							"key": "client_id",
+							"value": "{{clintkey}}"
+						},
+						{
+							"key": "response_type",
+							"value": "code"
+						},
+						{
+							"key": "scope",
+							"value": "AIS%3A{{consentId}}"
+						},
+						{
+							"key": "redirect_uri",
+							"value": "https://www.xy223.com/"
+						},
+						{
+							"key": "state",
+							"value": "NL"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Authorization Grant Token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json()\r",
+							"pm.collectionVariables.set(\"newaccess\", jsonData.access_token);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"client_id\" : \"{{clintkey}}\",\r\n    \"grant_type\" : \"authorization_code\",\r\n    \"scope\" : \"AIS:{{consentId}}\",\r\n    \"code\" : \"{{codes}}\",\r\n    \"redirect_uri\" : \"https://www.x123.com/\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://sandbox.handelsbanken.com/openbanking/redirect/oauth2/token/1.0",
+					"protocol": "https",
+					"host": [
+						"sandbox",
+						"handelsbanken",
+						"com"
+					],
+					"path": [
+						"openbanking",
+						"redirect",
+						"oauth2",
+						"token",
+						"1.0"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Accounts",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json()\r",
+							"pm.collectionVariables.set(\"account1\", jsonData.accounts[0].accountId);\r",
+							"pm.collectionVariables.set(\"account2\", jsonData.accounts[1].accountId);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{newaccess}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "TPP-Request-ID",
+						"value": "c8271b81-4229-5a1f-bf9c-kjhkhkhj",
+						"type": "text"
+					},
+					{
+						"key": "TPP-Transaction-ID",
+						"value": "6b24ce42-237f-4303-a917-cf7hjgjhjhgjh",
+						"type": "text"
+					},
+					{
+						"key": "X-IBM-Client-Id",
+						"value": "{{clintkey}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://sandbox.handelsbanken.com/openbanking/psd2/v2/accounts",
+					"protocol": "https",
+					"host": [
+						"sandbox",
+						"handelsbanken",
+						"com"
+					],
+					"path": [
+						"openbanking",
+						"psd2",
+						"v2",
+						"accounts"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Account1Transactions",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{newaccess}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-IBM-Client-Id",
+						"value": "{{clintkey}}",
+						"type": "text"
+					},
+					{
+						"key": "TPP-Request-ID",
+						"value": "c8271b81-4229-5a1f-bf9c-758f11c1f5b1",
+						"type": "text"
+					},
+					{
+						"key": "TPP-Transaction-ID",
+						"value": "6b24ce42-237f-4303-a917-cf778e5013d6",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://sandbox.handelsbanken.com/openbanking/psd2/v2/accounts/{{account1}}/transactions",
+					"protocol": "https",
+					"host": [
+						"sandbox",
+						"handelsbanken",
+						"com"
+					],
+					"path": [
+						"openbanking",
+						"psd2",
+						"v2",
+						"accounts",
+						"{{account1}}",
+						"transactions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Account2Transactions",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{newaccess}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-IBM-Client-Id",
+						"value": "{{clintkey}}",
+						"type": "text"
+					},
+					{
+						"key": "TPP-Request-ID",
+						"value": "c8271b81-4229-5a1f-bf9c-758f11c1f5b1",
+						"type": "text"
+					},
+					{
+						"key": "TPP-Transaction-ID",
+						"value": "6b24ce42-237f-4303-a917-cf778e5013d6",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://sandbox.handelsbanken.com/openbanking/psd2/v2/accounts/{{account2}}/transactions",
+					"protocol": "https",
+					"host": [
+						"sandbox",
+						"handelsbanken",
+						"com"
+					],
+					"path": [
+						"openbanking",
+						"psd2",
+						"v2",
+						"accounts",
+						"{{account2}}",
+						"transactions"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{access_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "access_token",
+			"value": "null",
+			"type": "string",
+			"disabled": true
+		},
+		{
+			"key": "clintkey",
+			"value": "9db32cd2-46ea-4e15-9b4d-04db994264dd",
+			"type": "string"
+		},
+		{
+			"key": "access_token",
+			"value": ""
+		},
+		{
+			"key": "consentId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "codes",
+			"value": "ss",
+			"type": "string"
+		},
+		{
+			"key": "newaccess",
+			"value": "ss",
+			"type": "string"
+		},
+		{
+			"key": "account1",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "account2",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
